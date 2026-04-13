@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WF App v2</title>
+<style>
+body {background:#020617;color:white;font-family:Arial;padding:12px}
+input {width:100%;padding:14px;font-size:16px;background:black;color:white;border-radius:10px}
+button {width:100%;padding:12px;margin-top:6px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:bold}
+.item {padding:10px;border-bottom:1px solid #333}
+.need {color:#22c55e}
+</style>
+</head>
+
+<body>
+
+<h2>WF App v2</h2>
+
+<input id="search" placeholder="type reward..." oninput="search()">
+
+<div id="results"></div>
+
+<script>
+
+let db = JSON.parse(localStorage.getItem("wfdb") || "[]")
+
+function save() {
+  localStorage.setItem("wfdb", JSON.stringify(db))
+}
+
+function search() {
+  let q = document.getElementById("search").value.toLowerCase()
+  let results = document.getElementById("results")
+
+  if (!q) {
+    results.innerHTML = ""
+    return
+  }
+
+  let matches = []
+
+  db.forEach((item,i)=>{
+    Object.keys(item.parts).forEach(part=>{
+      let label = item.name + " " + part
+      if(label.toLowerCase().includes(q)){
+        matches.push({i,part,label})
+      }
+    })
+  })
+
+  let exactExists = db.some(x => x.name.toLowerCase() === q)
+
+  if(!matches.length){
+    results.innerHTML = `
+      <button onclick="addItem('${q}')">Add "${q}"</button>
+    `
+    return
+  }
+
+  let html = matches.map(m=>`
+    <div class="item">
+      ${m.label}
+    </div>
+  `).join("")
+
+  if(!exactExists){
+    html += `<button onclick="addItem('${q}')">Add "${q}"</button>`
+  }
+
+  results.innerHTML = html
+}
+
+function addItem(name){
+  let item = {
+    name: name,
+    parts: {
+      "Blueprint": {need:1, have:0}
+    }
+  }
+  db.push(item)
+  save()
+  alert("Added " + name)
+}
+
+</script>
+
+</body>
+</html>
