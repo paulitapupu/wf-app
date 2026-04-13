@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WF App v3</title>
+  <style>
+    :root{
+      --bg:#020617;
+      --panel:#0f172a;
+      --panel2:#111827;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --border:#334155;
+      --blue:#2563eb;
+      --need:#22c55e;
+      --extra:#ef4444;
+      --covered:#60a5fa;
+      --unknown:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:linear-gradient(180deg,#020617 0%,#0f172a 100%);
+      color:var(--text);
+      padding:16px;
+    }
+    .wrap{
+      max-width:900px;
+      margin:0 auto;
+    }
+    .card{
+      background:rgba(15,23,42,.96);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.28);
+    }
+    h1{
+      margin:0 0 8px;
+      font-size:28px;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:14px;
+    }
+    .top{
+      display:flex;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .top button{
+      flex:1;
+    }
+    input[type="text"]{
+      width:100%;
+      padding:16px;
+      font-size:20px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:#020617;
+      color:white;
+      outline:none;
+    }
+    button{
+      border:none;
+      border-radius:12px;
+      padding:12px 14px;
+      font-weight:700;
+      cursor:pointer;
+      background:var(--blue);
+      color:white;
+      font-size:15px;
+    }
+    .secondary{
+      background:#334155;
+    }
+    .result{
+      margin-top:10px;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:rgba(2,6,23,.55);
+    }
+    .name{
+      font-weight:700;
+      margin-bottom:6px;
+    }
+    .meta{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:8px;
+    }
+    .need{color:var(--need)}
+    .extra{color:var(--extra)}
+    .covered{color:var(--covered)}
+    .unknown{color:var(--unknown)}
+    .confirm{
+      margin-top:14px;
+      padding:14px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#020617;
+    }
+    h3{
+      margin:18px 0 8px;
+    }
+    .recent-item{
+      padding:8px 0;
+      border-bottom:1px solid var(--border);
+      color:#cbd5e1;
+      font-size:14px;
+    }
+    .empty{
+      color:var(--muted);
+      padding:10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>WF App v3</h1>
+      <div class="sub">Dark version • Export • Import • Recently chosen</div>
+
+      <div class="top">
+        <button class="secondary" onclick="exportData()">Export</button>
+        <button class="secondary" onclick="importData()">Import</button>
+      </div>
+
+      <input id="search" type="text" placeholder="type reward..." oninput="searchRewards()" />
+
+      <div id="results"></div>
+      <div id="confirm"></div>
+
+      <h3>Recently chosen</h3>
+      <div id="recent"></div>
+    </div>
+  </div>
+
+<script>
+let db = JSON.parse(localStorage.getItem("wf_db_v3") || "[]");
+let recent = JSON.parse(localStorage.getItem("wf_recent_v3") || "[]");
+let current = null;
+
+function save(){
+  localStorage.setItem("wf_db_v3", JSON.stringify(db));
+  localStorage.setItem("wf_recent_v3", JSON.stringify(recent));
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+}
+
+function statusOf(part){
+  if(!part || !part.need) return "UNKNOWN";
+  if(part.have < part.need) return "NEED";
+  if(part.have > part.need) return "EXTRA";
+  return "COVERED";
+}
+
+function cls(status){
+  return status.toLowerCase();
+}
+
+function normalize(s){
+  return String(s || "")
+    .toLowerCase()
+    .replace(/blueprint/g, "bp")
+    .replace(/receiver/g, "rec")
+    .replace(/barrel/g, "barr")
+    .replace(/systems/g, "sys")
+    .replace(/neuroptics/g, "neuro")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function fuzzyMatch(q, text){
+  q = normalize(q);
+  text = normalize(text);
+  if(!q) return true;
+  if(text.includes(q)) return true;
+  return q.split(" ").every(p => !p || text.includes(p));
+}
+
+function searchRewards(){
+  const q = document.getElementById("search").value;
+  const results = document.getElementById("results");
+  document.getElementById("confirm").innerHTML = "";
+  current = null;
+
+  if(!q.trim()){
+    results.innerHTML = "";
+    return;
+  }
+
+  let matches = [];
+  db.forEach((item, i) => {
+    Object.keys(item.parts || {}).forEach(partName => {
+      const full = item.name + " " + partName;
+      if(fuzzyMatch(q, full)){
+        const p = item.parts[partName];
+        const status = statusOf(p);
+        matches.push({i, partName, full, status, p});
+      }
+    });
+  });
+
+  matches.sort((a,b) => {
+    const rank = s => s==="NEED" ? 0 : s==="UNKNOWN" ? 1 : s==="COVERED" ? 2 : 3;
+    return rank(a.status) - rank(b.status) || a.full.localeCompare(b.full);
+  });
+
+  if(matches.length === 0){
+    results.innerHTML = '<div class="result"><div class="name">No matches</div><div class="meta">Try shorter text like vasto rec or saryn sys.</div></div>';
+    return;
+  }
+
+  results.innerHTML = matches.slice(0, 12).map(m => {
+    const haveNeed = m.p && m.p.need ? ("Have " + m.p.have + " / Need " + m.p.need) : "Need count unknown";
+    return `
+      <div class="result">
+        <div class="name">${escapeHtml(m.full)} - <span class="${cls(m.status)}">${m.status}</span></div>
+        <div class="meta">${escapeHtml(haveNeed)}</div>
+        <button onclick="pick(${m.i}, '${escapeHtml(m.partName)}', '${escapeHtml(m.full)}')">Check</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function pick(i, partName, full){
+  current = {i, partName, full};
+  document.getElementById("confirm").innerHTML = `
+    <div class="confirm">
+      <div class="name">${full}</div>
+      <button onclick="confirmPick()">Choose this reward</button>
+      <button class="secondary" onclick="cancelPick()" style="margin-top:8px;">Not chosen</button>
+    </div>
+  `;
+}
+
+function confirmPick(){
+  if(!current) return;
+  const item = db[current.i];
+  if(!item || !item.parts || !item.parts[current.partName]) return;
+  item.parts[current.partName].have = Number(item.parts[current.partName].have || 0) + 1;
+  recent.unshift(current.full);
+  recent = recent.slice(0, 10);
+  save();
+  cancelPick();
+  searchRewards();
+  renderRecent();
+}
+
+function cancelPick(){
+  current = null;
+  document.getElementById("confirm").innerHTML = "";
+}
+
+function renderRecent(){
+  const el = document.getElementById("recent");
+  if(!recent.length){
+    el.innerHTML = '<div class="empty">Nothing chosen yet.</div>';
+    return;
+  }
+  el.innerHTML = recent.map(r => `<div class="recent-item">${escapeHtml(r)}</div>`).join("");
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(db, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "warframe_data.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        db = JSON.parse(reader.result);
+        save();
+        alert("Imported!");
+        searchRewards();
+      } catch(err){
+        alert("Could not import that file.");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+renderRecent();
+</script>
+</body>
+</html>
