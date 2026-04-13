@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WF Quick Tracker</title>
+<style>
+body{background:#020617;color:white;font-family:Arial;padding:12px}
+input{width:100%;padding:14px;font-size:16px;background:black;color:white;border-radius:10px}
+button{width:100%;padding:12px;margin-top:6px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:bold}
+.box{margin-top:10px;padding:10px;background:#000;border-radius:10px}
+.need{color:#22c55e} .extra{color:#ef4444} .covered{color:#60a5fa}
+</style>
+</head>
+<body>
+
+<h2>WF Quick Tracker</h2>
+
+<input id="q" placeholder="Type reward..." oninput="search()">
+<div id="out"></div>
+
+<script>
+let db = JSON.parse(localStorage.getItem("wfdb_final") || JSON.stringify([{"name": "Perigale", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Epitaph prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 3, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 45}, "Stock": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Trumna prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 2, "ducats": 15}, "Barrel": {"need": 1, "have": 1, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 45}, "Stock": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Baza Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 100}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 15}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Alternox prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "PartA": {"need": 1, "have": 1, "ducats": 45}, "PartB": {"need": 1, "have": 1, "ducats": 45}, "PartC": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Acceltra Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 100}, "Receiver": {"need": 1, "have": 1, "ducats": 45}, "Stock": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Tigris Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 1, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 15}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Soma Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 1, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 15}, "Stock": {"need": 1, "have": 0, "ducats": 45}}}, {"name": "Perigale Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Shedu", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 0}, "Barrel": {"need": 1, "have": 0, "ducats": 0}, "Chassis": {"need": 1, "have": 0, "ducats": 0}, "Handle": {"need": 1, "have": 0, "ducats": 0}, "Receiver": {"need": 1, "have": 0, "ducats": 0}}}, {"name": "Latron Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Fulmin Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Akarius Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Link": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Sagek Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Vasto Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 1, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Bo Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Handle": {"need": 1, "have": 1, "ducats": 45}, "Ornament": {"need": 2, "have": 0, "ducats": 45}}}, {"name": "Dual Kamas Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 0, "ducats": 45}, "Handle": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Dual Zoren Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 2, "ducats": 45}, "Handle": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Galariak Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Gunsen Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 1, "have": 0, "ducats": 45}, "Handle": {"need": 2, "have": 1, "ducats": 45}}}, {"name": "Kestrel Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 1, "have": 2, "ducats": 15}, "Grip": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Nikana Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 1, "have": 0, "ducats": 100}, "Handle": {"need": 1, "have": 0, "ducats": 45}}}, {"name": "Orthos Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 0, "ducats": 45}, "Handle": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Reaper Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 1, "have": 0, "ducats": 100}, "Handle": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Scindo Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 0, "ducats": 45}, "Handle": {"need": 1, "have": 0, "ducats": 45}}}, {"name": "Tekko Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 0, "ducats": 45}, "Gauntlet": {"need": 1, "have": 0, "ducats": 45}}}, {"name": "Banshee Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Chroma Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 0, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Garuda Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Gauss Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 0, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Harrow Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Nyx Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 0, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Saryn Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Titania Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 0, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 0, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Wisp Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 0, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 65}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Protea Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Sevagoth Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Trinity Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Valkyr Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Vauban Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Volt Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Xaku Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Yareli Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 2, "ducats": 100}}}, {"name": "Inaros Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 2, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Lavos Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Loki Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Mesa Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Nova Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 2, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Ash Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Atlas Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Caliban Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 2, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Ember Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Frost Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Gyre Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}]))
+
+function save(){localStorage.setItem("wfdb_final", JSON.stringify(db))}
+
+function status(p){
+ let n=p.need||0, h=p.have||0
+ if(h<n) return ["NEED","need"]
+ if(h>n) return ["EXTRA","extra"]
+ return ["COVERED","covered"]
+}
+
+function search(){
+ let q=document.getElementById("q").value.toLowerCase()
+ if(!q){document.getElementById("out").innerHTML="";return}
+
+ let best=null
+
+ db.forEach(item=>{
+  Object.entries(item.parts).forEach(([part,data])=>{
+    let label=(item.name+" "+part).toLowerCase()
+    if(label.includes(q)){
+      if(!best) best={item,part,data}
+    }
+  })
+ })
+
+ let exact = db.some(x=>x.name.toLowerCase()===q)
+
+ if(best){
+  let s=status(best.data)
+  document.getElementById("out").innerHTML=`
+  <div class="box">
+   <b>${best.item.name} ${best.part}</b><br>
+   <span class="${s[1]}">${s[0]}</span><br>
+   Have ${best.data.have} / Need ${best.data.need}<br>
+   <button onclick="inc()">+1 Have</button>
+  </div>
+  ` + (!exact ? `<button onclick="add()">Add "${q}"</button>` : "")
+ } else {
+  document.getElementById("out").innerHTML=`<button onclick="add()">Add "${q}"</button>`
+ }
+}
+
+function inc(){
+ let q=document.getElementById("q").value.toLowerCase()
+ db.forEach(item=>{
+  Object.entries(item.parts).forEach(([part,data])=>{
+    let label=(item.name+" "+part).toLowerCase()
+    if(label.includes(q)) data.have++
+  })
+ })
+ save()
+ search()
+}
+
+function add(){
+ let name=document.getElementById("q").value
+ db.push({name:name,parts:{Blueprint:{need:1,have:0}}})
+ save()
+ alert("Added "+name)
+}
+</script>
+
+</body>
+</html>
