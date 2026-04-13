@@ -1,27 +1,45 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WF App Final</title>
+<title>WF App Inventory</title>
 <style>
 body {background:#020617;color:white;font-family:Arial;padding:12px}
 input {width:100%;padding:14px;font-size:16px;background:black;color:white;border-radius:10px}
 button {width:100%;padding:12px;margin-top:6px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:bold}
 .item {padding:10px;border-bottom:1px solid #333}
+.need {color:#22c55e}
 </style>
-</head>
+</head><body><h2>WF App Inventory</h2><input id="search" placeholder="type reward..." oninput="search()"><div id="results"></div><script>
 
-<body>
-
-<h2>WF App Final</h2>
-
-<input id="search" placeholder="type reward..." oninput="search()">
-
-<div id="results"></div>
-
-<script>
-
-let db = JSON.parse(localStorage.getItem("wfdb") || "[]")
+// 🔥 SEEDED INVENTORY (sample from your data structure)
+let db = JSON.parse(localStorage.getItem("wfdb") || JSON.stringify([
+  {
+    name:"Nekros Prime",
+    parts:{
+      "Blueprint":{need:1,have:1},
+      "Neuroptics":{need:1,have:0},
+      "Chassis":{need:1,have:0},
+      "Systems":{need:1,have:1}
+    }
+  },
+  {
+    name:"Akarius Prime",
+    parts:{
+      "Blueprint":{need:1,have:1},
+      "Receiver":{need:2,have:2},
+      "Barrel":{need:2,have:1}
+    }
+  },
+  {
+    name:"Alternox Prime",
+    parts:{
+      "Blueprint":{need:1,have:0},
+      "Barrel":{need:1,have:0},
+      "Receiver":{need:1,have:0},
+      "Stock":{need:1,have:0}
+    }
+  }
+]))
 
 function save() {
   localStorage.setItem("wfdb", JSON.stringify(db))
@@ -30,7 +48,7 @@ function save() {
 function search() {
   let q = document.getElementById("search").value.toLowerCase()
   let results = document.getElementById("results")
-
+  
   if (!q) {
     results.innerHTML = ""
     return
@@ -64,7 +82,5 @@ function addItem(name){
   alert("Added "+name)
 }
 
-</script>
-
-</body>
+</script></body>
 </html>
