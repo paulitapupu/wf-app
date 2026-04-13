@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WF App Locked v1</title>
+<style>
+:root {
+  --bg:#020617; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --border:#334155;
+  --blue:#2563eb; --secondary:#475569;
+  --need:#22c55e; --extra:#ef4444; --covered:#60a5fa; --unknown:#f59e0b;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:linear-gradient(180deg,#020617 0%,#0f172a 100%); color:var(--text); font-family:Arial,Helvetica,sans-serif; padding:14px; }
+.wrap { max-width:920px; margin:0 auto; }
+.card { background:rgba(15,23,42,.96); border:1px solid var(--border); border-radius:18px; padding:14px; margin-bottom:14px; }
+h1 { margin:0 0 8px; font-size:26px; }
+h3 { margin:14px 0 8px; }
+.sub { color:var(--muted); font-size:13px; margin-bottom:10px; }
+input,select { width:100%; padding:14px; margin-top:6px; background:#000; color:white; border:1px solid #333; border-radius:10px; font-size:16px; }
+button { width:100%; padding:11px 12px; margin-top:6px; border:none; border-radius:10px; background:var(--blue); color:white; font-weight:700; font-size:15px; cursor:pointer; }
+button.secondary { background:var(--secondary); }
+.row { display:flex; gap:8px; flex-wrap:wrap; }
+.row > * { flex:1; min-width:120px; }
+.item { padding:10px; border-bottom:1px solid #334155; }
+.meta { font-size:12px; color:var(--muted); margin-top:4px; }
+.box { background:#000; padding:12px; margin-top:10px; border-radius:12px; border:1px solid #223; }
+.need { color:var(--need); } .extra { color:var(--extra); } .covered { color:var(--covered); } .unknown { color:var(--unknown); }
+.tag { display:inline-block; padding:3px 8px; border-radius:999px; font-size:12px; background:#1f2937; color:#cbd5e1; margin-left:6px; }
+.partrow { padding:10px; border:1px solid #223; border-radius:10px; margin-top:8px; }
+.recent { padding:8px 0; border-bottom:1px solid #223; font-size:14px; }
+.empty { color:var(--muted); padding:10px 0; }
+.smallnote { color:var(--muted); font-size:12px; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>WF App Locked v1</h1>
+    <div class="sub">Old guided add flow + separate reward check/choose. Seeded from your saved DB.</div>
+
+    <div class="row">
+      <button class="secondary" onclick="exportData()">Export</button>
+      <button class="secondary" onclick="importData()">Import</button>
+    </div>
+
+    <input id="search" placeholder="type reward..." oninput="searchRewards()">
+    <div id="results"></div>
+    <div id="confirm"></div>
+    <div id="addFlow"></div>
+  </div>
+
+  <div class="card">
+    <h3>Recently chosen</h3>
+    <div id="recentList"></div>
+  </div>
+</div>
+
+<script>
+const SEED_DB = [{"name": "Perigale", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Epitaph Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 3, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 45}, "Stock": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Trumna Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 2, "ducats": 15}, "Barrel": {"need": 1, "have": 1, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 45}, "Stock": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Baza Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 100}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 15}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Alternox Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "PartA": {"need": 1, "have": 1, "ducats": 45}, "PartB": {"need": 1, "have": 1, "ducats": 45}, "PartC": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Acceltra Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 100}, "Receiver": {"need": 1, "have": 1, "ducats": 45}, "Stock": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Tigris Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 1, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 15}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Soma Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 1, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 15}, "Stock": {"need": 1, "have": 0, "ducats": 45}}}, {"name": "Perigale Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Shedu", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 0}, "Barrel": {"need": 1, "have": 0, "ducats": 0}, "Chassis": {"need": 1, "have": 0, "ducats": 0}, "Handle": {"need": 1, "have": 0, "ducats": 0}, "Receiver": {"need": 1, "have": 0, "ducats": 0}}}, {"name": "Latron Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Fulmin Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Akarius Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Link": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 2, "have": 1, "ducats": 100}}}, {"name": "Sagek Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Vasto Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 1, "ducats": 45}, "Receiver": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Bo Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Handle": {"need": 1, "have": 1, "ducats": 45}, "Ornament": {"need": 2, "have": 0, "ducats": 45}}}, {"name": "Dual Kamas Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 0, "ducats": 45}, "Handle": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Dual Zoren Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 2, "ducats": 45}, "Handle": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Galariak Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Barrel": {"need": 1, "have": 0, "ducats": 45}, "Receiver": {"need": 1, "have": 0, "ducats": 45}, "Stock": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Gunsen Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 1, "have": 0, "ducats": 45}, "Handle": {"need": 2, "have": 1, "ducats": 45}}}, {"name": "Kestrel Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 1, "have": 2, "ducats": 15}, "Grip": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Nikana Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 1, "have": 0, "ducats": 100}, "Handle": {"need": 1, "have": 0, "ducats": 45}}}, {"name": "Orthos Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 0, "ducats": 45}, "Handle": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Reaper Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 1, "have": 0, "ducats": 100}, "Handle": {"need": 1, "have": 1, "ducats": 45}}}, {"name": "Scindo Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 0, "ducats": 45}, "Handle": {"need": 1, "have": 0, "ducats": 45}}}, {"name": "Tekko Prime", "category": "weapon", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Blade": {"need": 2, "have": 0, "ducats": 45}, "Gauntlet": {"need": 1, "have": 0, "ducats": 45}}}, {"name": "Banshee Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Chroma Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 0, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Garuda Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Gauss Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 0, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Harrow Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Nyx Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 0, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Saryn Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Titania Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 0, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 0, "ducats": 45}, "Systems": {"need": 1, "have": 0, "ducats": 100}}}, {"name": "Wisp Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 0, "ducats": 15}, "Chassis": {"need": 1, "have": 0, "ducats": 65}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Protea Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Sevagoth Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Trinity Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Valkyr Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Vauban Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Volt Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Xaku Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Yareli Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 2, "ducats": 100}}}, {"name": "Inaros Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 2, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Lavos Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Loki Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Mesa Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Nova Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 2, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Ash Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Atlas Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Caliban Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 2, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Ember Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Frost Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}, {"name": "Gyre Prime", "category": "frame", "parts": {"Blueprint": {"need": 1, "have": 1, "ducats": 15}, "Chassis": {"need": 1, "have": 1, "ducats": 45}, "Neuroptics": {"need": 1, "have": 1, "ducats": 45}, "Systems": {"need": 1, "have": 1, "ducats": 100}}}];
+let db = JSON.parse(localStorage.getItem("wf_locked_db_v1") || JSON.stringify(SEED_DB));
+let recent = JSON.parse(localStorage.getItem("wf_locked_recent_v1") || "[]");
+let currentPick = null;
+let addParts = [];
+let addName = "";
+let addType = "frame";
+
+function saveAll() {
+  localStorage.setItem("wf_locked_db_v1", JSON.stringify(db));
+  localStorage.setItem("wf_locked_recent_v1", JSON.stringify(recent));
+}
+function normalize(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/blueprint/g, " bp ")
+    .replace(/receiver/g, " rec ")
+    .replace(/barrel/g, " barr ")
+    .replace(/systems/g, " sys ")
+    .replace(/neuroptics/g, " neuro ")
+    .replace(/chassis/g, " chass ")
+    .replace(/handle/g, " hand ")
+    .replace(/blade/g, " blad ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+function itemStatus(part) {
+  const need = Number(part.need || 0), have = Number(part.have || 0);
+  if (!need) return "UNKNOWN";
+  if (have < need) return "NEED";
+  if (have > need) return "EXTRA";
+  return "COVERED";
+}
+function score(query, text) {
+  const q = normalize(query), t = normalize(text);
+  if (!q) return 0;
+  if (t.includes(q)) return 100 - t.indexOf(q);
+  const parts = q.split(" ").filter(Boolean);
+  let hits = 0;
+  for (const p of parts) if (t.includes(p)) hits++;
+  return hits * 15;
+}
+function searchRewards() {
+  const q = document.getElementById("search").value;
+  const results = document.getElementById("results");
+  document.getElementById("confirm").innerHTML = "";
+  if (!q.trim()) {
+    results.innerHTML = "";
+    return;
+  }
+  let matches = [];
+  db.forEach((item, i) => {
+    Object.entries(item.parts || {}).forEach(([part, data]) => {
+      const label = item.name + " " + part;
+      const sc = score(q, label);
+      if (sc > 0) matches.push({ i, part, label, sc, data });
+    });
+  });
+  matches.sort((a, b) => {
+    const rank = s => s === "NEED" ? 0 : s === "UNKNOWN" ? 1 : s === "COVERED" ? 2 : 3;
+    return rank(itemStatus(a.data)) - rank(itemStatus(b.data)) || b.sc - a.sc || a.label.localeCompare(b.label);
+  });
+  if (!matches.length) {
+    results.innerHTML = `
+      <div class="box">
+        <b>No close match found</b>
+        <div class="smallnote">Add it using the old guided flow.</div>
+        <button onclick="startAddFlow(document.getElementById('search').value)">Add new item</button>
+      </div>`;
+    return;
+  }
+  results.innerHTML = matches.slice(0, 12).map(m => {
+    const st = itemStatus(m.data);
+    const cls = st.toLowerCase();
+    const note = Number(m.data.need || 0)
+      ? `Have ${m.data.have || 0} / Need ${m.data.need || 0} · Ducats ${m.data.ducats || 0}`
+      : `Need count unknown · Ducats ${m.data.ducats || 0}`;
+    return `
+      <div class="item">
+        <div><b>${escapeHtml(m.label)}</b> <span class="${cls}">${st}</span></div>
+        <div class="meta">${escapeHtml(note)}</div>
+        <button onclick="checkReward(${m.i}, ${JSON.stringify(m.part)}, ${JSON.stringify(m.label)})">Check</button>
+      </div>`;
+  }).join("");
+}
+function checkReward(i, part, label) {
+  currentPick = { i, part, label };
+  const p = db[i].parts[part];
+  const st = itemStatus(p);
+  const note = Number(p.need || 0)
+    ? `Have ${p.have || 0} / Need ${p.need || 0}`
+    : `Need count unknown`;
+  document.getElementById("confirm").innerHTML = `
+    <div class="box">
+      <div><b>${escapeHtml(label)}</b> <span class="${st.toLowerCase()}">${st}</span></div>
+      <div class="meta">${escapeHtml(note)}</div>
+      <button onclick="chooseReward()">Choose this reward</button>
+      <button class="secondary" onclick="clearConfirm()">Not chosen</button>
+    </div>`;
+}
+function chooseReward() {
+  if (!currentPick) return;
+  const p = db[currentPick.i].parts[currentPick.part];
+  p.have = Number(p.have || 0) + 1;
+  recent.unshift(currentPick.label);
+  recent = recent.slice(0, 20);
+  saveAll();
+  document.getElementById("search").value = "";
+  document.getElementById("results").innerHTML = "";
+  clearConfirm();
+  renderRecent();
+}
+function clearConfirm() {
+  currentPick = null;
+  document.getElementById("confirm").innerHTML = "";
+}
+function startAddFlow(prefill) {
+  addParts = [];
+  addName = prefill || "";
+  addType = "frame";
+  document.getElementById("addFlow").innerHTML = `
+    <div class="box">
+      <b>Add new item</b>
+      <input id="addName" value="${escapeHtml(addName)}" placeholder="Item name">
+      <select id="addType">
+        <option value="frame">Frame</option>
+        <option value="weapon">Weapon</option>
+      </select>
+      <select id="addSetup">
+        <option value="frame_default">Frame default</option>
+        <option value="custom">Custom</option>
+      </select>
+      <div class="smallnote">There is no fake weapon default. For weapons, use Custom unless you want to add exact parts yourself.</div>
+      <button onclick="nextAddFlow()">Next</button>
+      <button class="secondary" onclick="closeAddFlow()">Cancel</button>
+    </div>`;
+}
+function nextAddFlow() {
+  addName = document.getElementById("addName").value.trim();
+  addType = document.getElementById("addType").value;
+  const setup = document.getElementById("addSetup").value;
+  if (!addName) {
+    alert("Please enter an item name.");
+    return;
+  }
+  if (setup === "frame_default" && addType === "frame") {
+    addParts = [
+      {name:"Blueprint", need:1, have:0, ducats:15},
+      {name:"Neuroptics", need:1, have:0, ducats:45},
+      {name:"Chassis", need:1, have:0, ducats:45},
+      {name:"Systems", need:1, have:0, ducats:100}
+    ];
+  } else {
+    addParts = [{name:"", need:1, have:0, ducats:0}];
+  }
+  renderPartEditor();
+}
+function renderPartEditor() {
+  let rows = addParts.map((p, i) => `
+    <div class="partrow">
+      <input value="${escapeHtml(p.name)}" placeholder="Part name" onchange="updatePart(${i}, 'name', this.value)">
+      <div class="row">
+        <div><input type="number" value="${p.need}" placeholder="Need" onchange="updatePart(${i}, 'need', this.value)"></div>
+        <div><input type="number" value="${p.have}" placeholder="Have" onchange="updatePart(${i}, 'have', this.value)"></div>
+        <div><input type="number" value="${p.ducats}" placeholder="Ducats" onchange="updatePart(${i}, 'ducats', this.value)"></div>
+      </div>
+      <button class="secondary" onclick="removePart(${i})">Remove part</button>
+    </div>
+  `).join("");
+  document.getElementById("addFlow").innerHTML = `
+    <div class="box">
+      <b>${escapeHtml(addName)}</b> <span class="tag">${escapeHtml(addType)}</span>
+      ${rows}
+      <button onclick="addPartRow()">Add part</button>
+      <button onclick="saveNewItem()">Save item</button>
+      <button class="secondary" onclick="closeAddFlow()">Cancel</button>
+    </div>`;
+}
+function updatePart(i, key, value) {
+  if (["need","have","ducats"].includes(key)) addParts[i][key] = Number(value || 0);
+  else addParts[i][key] = value;
+}
+function addPartRow() {
+  addParts.push({name:"", need:1, have:0, ducats:0});
+  renderPartEditor();
+}
+function removePart(i) {
+  addParts.splice(i, 1);
+  if (!addParts.length) addParts.push({name:"", need:1, have:0, ducats:0});
+  renderPartEditor();
+}
+function saveNewItem() {
+  const clean = addParts.filter(p => String(p.name || "").trim());
+  if (!clean.length) {
+    alert("Add at least one part.");
+    return;
+  }
+  let item = db.find(x => normalize(x.name) === normalize(addName));
+  if (!item) {
+    item = { name: addName, category: addType, parts: {} };
+    db.push(item);
+  } else {
+    item.category = addType;
+  }
+  clean.forEach(p => {
+    item.parts[String(p.name).trim()] = {
+      need: Number(p.need || 0),
+      have: Number(p.have || 0),
+      ducats: Number(p.ducats || 0)
+    };
+  });
+  saveAll();
+  closeAddFlow();
+  alert("Saved.");
+  document.getElementById("search").value = addName;
+  searchRewards();
+}
+function closeAddFlow() {
+  document.getElementById("addFlow").innerHTML = "";
+}
+function renderRecent() {
+  const el = document.getElementById("recentList");
+  if (!recent.length) {
+    el.innerHTML = '<div class="empty">Nothing chosen yet.</div>';
+    return;
+  }
+  el.innerHTML = recent.map(r => `<div class="recent">${escapeHtml(r)}</div>`).join("");
+}
+function exportData() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "warframe_data_locked.json";
+  a.click();
+}
+function importData() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        db = JSON.parse(reader.result);
+        saveAll();
+        alert("Imported.");
+        searchRewards();
+      } catch (err) {
+        alert("Could not import that file.");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+renderRecent();
+</script>
+</body>
+</html>
