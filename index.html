@@ -1,312 +1,167 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WF App v3</title>
-  <style>
-    :root{
-      --bg:#020617;
-      --panel:#0f172a;
-      --panel2:#111827;
-      --text:#e5e7eb;
-      --muted:#94a3b8;
-      --border:#334155;
-      --blue:#2563eb;
-      --need:#22c55e;
-      --extra:#ef4444;
-      --covered:#60a5fa;
-      --unknown:#f59e0b;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:Arial, Helvetica, sans-serif;
-      background:linear-gradient(180deg,#020617 0%,#0f172a 100%);
-      color:var(--text);
-      padding:16px;
-    }
-    .wrap{
-      max-width:900px;
-      margin:0 auto;
-    }
-    .card{
-      background:rgba(15,23,42,.96);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:16px;
-      box-shadow:0 10px 30px rgba(0,0,0,.28);
-    }
-    h1{
-      margin:0 0 8px;
-      font-size:28px;
-    }
-    .sub{
-      color:var(--muted);
-      font-size:13px;
-      margin-bottom:14px;
-    }
-    .top{
-      display:flex;
-      gap:10px;
-      margin-bottom:12px;
-    }
-    .top button{
-      flex:1;
-    }
-    input[type="text"]{
-      width:100%;
-      padding:16px;
-      font-size:20px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:#020617;
-      color:white;
-      outline:none;
-    }
-    button{
-      border:none;
-      border-radius:12px;
-      padding:12px 14px;
-      font-weight:700;
-      cursor:pointer;
-      background:var(--blue);
-      color:white;
-      font-size:15px;
-    }
-    .secondary{
-      background:#334155;
-    }
-    .result{
-      margin-top:10px;
-      padding:12px;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:rgba(2,6,23,.55);
-    }
-    .name{
-      font-weight:700;
-      margin-bottom:6px;
-    }
-    .meta{
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:8px;
-    }
-    .need{color:var(--need)}
-    .extra{color:var(--extra)}
-    .covered{color:var(--covered)}
-    .unknown{color:var(--unknown)}
-    .confirm{
-      margin-top:14px;
-      padding:14px;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:#020617;
-    }
-    h3{
-      margin:18px 0 8px;
-    }
-    .recent-item{
-      padding:8px 0;
-      border-bottom:1px solid var(--border);
-      color:#cbd5e1;
-      font-size:14px;
-    }
-    .empty{
-      color:var(--muted);
-      padding:10px 0;
-    }
-  </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WF App v6</title>
+<style>
+body{background:#020617;color:white;font-family:Arial;padding:12px}
+input{width:100%;padding:12px;margin-top:6px;background:#000;color:white;border:1px solid #333;border-radius:8px}
+button{width:100%;padding:10px;margin-top:6px;border:none;border-radius:8px;background:#2563eb;color:white;font-weight:bold}
+.item{border-bottom:1px solid #333;padding:10px}
+.need{color:#22c55e}.extra{color:#ef4444}.covered{color:#60a5fa}.unknown{color:#f59e0b}
+.box{margin-top:10px;padding:10px;background:#000;border-radius:10px}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>WF App v3</h1>
-      <div class="sub">Dark version • Export • Import • Recently chosen</div>
 
-      <div class="top">
-        <button class="secondary" onclick="exportData()">Export</button>
-        <button class="secondary" onclick="importData()">Import</button>
-      </div>
+<h2>WF App v6</h2>
 
-      <input id="search" type="text" placeholder="type reward..." oninput="searchRewards()" />
+<button onclick="exportData()">Export</button>
+<button onclick="importData()">Import</button>
 
-      <div id="results"></div>
-      <div id="confirm"></div>
+<input id="search" placeholder="type reward..." oninput="search()">
 
-      <h3>Recently chosen</h3>
-      <div id="recent"></div>
-    </div>
-  </div>
+<div id="results"></div>
+<div id="confirm"></div>
+<div id="builder"></div>
 
 <script>
-let db = JSON.parse(localStorage.getItem("wf_db_v3") || "[]");
-let recent = JSON.parse(localStorage.getItem("wf_recent_v3") || "[]");
-let current = null;
+let db = JSON.parse(localStorage.getItem("wf_db")||"[]")
 
-function save(){
-  localStorage.setItem("wf_db_v3", JSON.stringify(db));
-  localStorage.setItem("wf_recent_v3", JSON.stringify(recent));
+function save(){localStorage.setItem("wf_db",JSON.stringify(db))}
+
+function status(p){
+ if(!p.need) return "UNKNOWN"
+ if(p.have<p.need) return "NEED"
+ if(p.have>p.need) return "EXTRA"
+ return "COVERED"
 }
 
-function escapeHtml(str){
-  return String(str)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#39;");
+function search(){
+ let q=document.getElementById("search").value.toLowerCase()
+ let out=""
+ let found=false
+
+ db.forEach((item,i)=>{
+  Object.keys(item.parts).forEach(part=>{
+   let name=item.name+" "+part
+   if(name.toLowerCase().includes(q)){
+    found=true
+    let s=status(item.parts[part])
+    out+=`<div class='item'><b>${name}</b> <span class='${s.toLowerCase()}'>${s}</span>
+    <button onclick="pick(${i},'${part}','${name}')">Check</button></div>`
+   }
+  })
+ })
+
+ if(!found && q){
+  out+=`<div class='box'>No results
+  <button onclick="startBuilder('${q}')">Add item</button></div>`
+ }
+
+ document.getElementById("results").innerHTML=out
 }
 
-function statusOf(part){
-  if(!part || !part.need) return "UNKNOWN";
-  if(part.have < part.need) return "NEED";
-  if(part.have > part.need) return "EXTRA";
-  return "COVERED";
-}
+let current=null
 
-function cls(status){
-  return status.toLowerCase();
-}
-
-function normalize(s){
-  return String(s || "")
-    .toLowerCase()
-    .replace(/blueprint/g, "bp")
-    .replace(/receiver/g, "rec")
-    .replace(/barrel/g, "barr")
-    .replace(/systems/g, "sys")
-    .replace(/neuroptics/g, "neuro")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function fuzzyMatch(q, text){
-  q = normalize(q);
-  text = normalize(text);
-  if(!q) return true;
-  if(text.includes(q)) return true;
-  return q.split(" ").every(p => !p || text.includes(p));
-}
-
-function searchRewards(){
-  const q = document.getElementById("search").value;
-  const results = document.getElementById("results");
-  document.getElementById("confirm").innerHTML = "";
-  current = null;
-
-  if(!q.trim()){
-    results.innerHTML = "";
-    return;
-  }
-
-  let matches = [];
-  db.forEach((item, i) => {
-    Object.keys(item.parts || {}).forEach(partName => {
-      const full = item.name + " " + partName;
-      if(fuzzyMatch(q, full)){
-        const p = item.parts[partName];
-        const status = statusOf(p);
-        matches.push({i, partName, full, status, p});
-      }
-    });
-  });
-
-  matches.sort((a,b) => {
-    const rank = s => s==="NEED" ? 0 : s==="UNKNOWN" ? 1 : s==="COVERED" ? 2 : 3;
-    return rank(a.status) - rank(b.status) || a.full.localeCompare(b.full);
-  });
-
-  if(matches.length === 0){
-    results.innerHTML = '<div class="result"><div class="name">No matches</div><div class="meta">Try shorter text like vasto rec or saryn sys.</div></div>';
-    return;
-  }
-
-  results.innerHTML = matches.slice(0, 12).map(m => {
-    const haveNeed = m.p && m.p.need ? ("Have " + m.p.have + " / Need " + m.p.need) : "Need count unknown";
-    return `
-      <div class="result">
-        <div class="name">${escapeHtml(m.full)} - <span class="${cls(m.status)}">${m.status}</span></div>
-        <div class="meta">${escapeHtml(haveNeed)}</div>
-        <button onclick="pick(${m.i}, '${escapeHtml(m.partName)}', '${escapeHtml(m.full)}')">Check</button>
-      </div>
-    `;
-  }).join("");
-}
-
-function pick(i, partName, full){
-  current = {i, partName, full};
-  document.getElementById("confirm").innerHTML = `
-    <div class="confirm">
-      <div class="name">${full}</div>
-      <button onclick="confirmPick()">Choose this reward</button>
-      <button class="secondary" onclick="cancelPick()" style="margin-top:8px;">Not chosen</button>
-    </div>
-  `;
+function pick(i,p,n){
+ current={i,p,n}
+ document.getElementById("confirm").innerHTML=
+ `<div class='box'><b>${n}</b>
+ <button onclick="confirmPick()">Choose</button>
+ <button onclick="cancel()">Cancel</button></div>`
 }
 
 function confirmPick(){
-  if(!current) return;
-  const item = db[current.i];
-  if(!item || !item.parts || !item.parts[current.partName]) return;
-  item.parts[current.partName].have = Number(item.parts[current.partName].have || 0) + 1;
-  recent.unshift(current.full);
-  recent = recent.slice(0, 10);
-  save();
-  cancelPick();
-  searchRewards();
-  renderRecent();
+ db[current.i].parts[current.p].have++
+ save()
+ cancel()
+ search()
 }
 
-function cancelPick(){
-  current = null;
-  document.getElementById("confirm").innerHTML = "";
+function cancel(){document.getElementById("confirm").innerHTML=""}
+
+// MULTI PART BUILDER
+let parts=[]
+
+function startBuilder(q){
+ parts=[]
+ renderBuilder(q)
 }
 
-function renderRecent(){
-  const el = document.getElementById("recent");
-  if(!recent.length){
-    el.innerHTML = '<div class="empty">Nothing chosen yet.</div>';
-    return;
+function addRow(){
+ parts.push({part:"",need:1,have:0,ducats:0})
+ renderBuilder()
+}
+
+function updateRow(i,key,val){
+ parts[i][key]=val
+}
+
+function removeRow(i){
+ parts.splice(i,1)
+ renderBuilder()
+}
+
+function renderBuilder(name=""){
+ let html=`<div class='box'>
+ Name<input id='itemName' value='${name||""}'>`
+
+ parts.forEach((p,i)=>{
+  html+=`
+  <div>
+   Part<input value='${p.part}' onchange="updateRow(${i},'part',this.value)">
+   Need<input type='number' value='${p.need}' onchange="updateRow(${i},'need',this.value)">
+   Have<input type='number' value='${p.have}' onchange="updateRow(${i},'have',this.value)">
+   Ducats<input type='number' value='${p.ducats}' onchange="updateRow(${i},'ducats',this.value)">
+   <button onclick="removeRow(${i})">Remove</button>
+  </div>`
+ })
+
+ html+=`
+ <button onclick="addRow()">Add Part</button>
+ <button onclick="saveItem()">Save Item</button>
+ </div>`
+
+ document.getElementById("builder").innerHTML=html
+}
+
+function saveItem(){
+ let name=document.getElementById("itemName").value
+ let item={name,parts:{}}
+
+ parts.forEach(p=>{
+  if(p.part){
+   item.parts[p.part]={need:+p.need||0,have:+p.have||0,ducats:+p.ducats||0}
   }
-  el.innerHTML = recent.map(r => `<div class="recent-item">${escapeHtml(r)}</div>`).join("");
+ })
+
+ db.push(item)
+ save()
+ alert("Saved")
+ document.getElementById("builder").innerHTML=""
+ search()
 }
 
 function exportData(){
-  const blob = new Blob([JSON.stringify(db, null, 2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "warframe_data.json";
-  a.click();
-  URL.revokeObjectURL(url);
+ let blob=new Blob([JSON.stringify(db)],{type:"application/json"})
+ let a=document.createElement("a")
+ a.href=URL.createObjectURL(blob)
+ a.download="wf.json"
+ a.click()
 }
 
 function importData(){
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".json,application/json";
-  input.onchange = e => {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try{
-        db = JSON.parse(reader.result);
-        save();
-        alert("Imported!");
-        searchRewards();
-      } catch(err){
-        alert("Could not import that file.");
-      }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
+ let i=document.createElement("input")
+ i.type="file"
+ i.onchange=e=>{
+  let r=new FileReader()
+  r.onload=()=>{db=JSON.parse(r.result);save();alert("Imported")}
+  r.readAsText(e.target.files[0])
+ }
+ i.click()
 }
-
-renderRecent();
 </script>
+
 </body>
 </html>
