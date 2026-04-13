@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WF App v7</title>
+<style>
+body{background:#020617;color:white;font-family:Arial;padding:12px}
+input,select{width:100%;padding:14px;margin-top:6px;background:#000;color:white;border:1px solid #333;border-radius:8px}
+button{width:100%;padding:10px;margin-top:6px;border:none;border-radius:8px;background:#2563eb;color:white;font-weight:bold}
+.box{background:#000;padding:10px;margin-top:10px;border-radius:10px}
+.item{padding:10px;border-bottom:1px solid #333}
+.need{color:#22c55e}.extra{color:#ef4444}.covered{color:#60a5fa}.unknown{color:#f59e0b}
+</style>
+</head>
+<body>
+
+<h2>Reward Picker</h2>
+
+<input id="search" placeholder="type reward..." oninput="search()">
+
+<div id="results"></div>
+<div id="confirm"></div>
+<div id="add"></div>
+
+<script>
+let db = JSON.parse(localStorage.getItem("wf_db")||"[]")
+function save(){localStorage.setItem("wf_db",JSON.stringify(db))}
+
+function status(p){
+ if(!p.need) return "UNKNOWN"
+ if(p.have<p.need) return "NEED"
+ if(p.have>p.need) return "EXTRA"
+ return "COVERED"
+}
+
+function search(){
+ let q=document.getElementById("search").value.toLowerCase()
+ let out=""
+ let found=false
+
+ db.forEach((item,i)=>{
+  Object.keys(item.parts).forEach(part=>{
+   let name=item.name+" "+part
+   if(name.toLowerCase().includes(q)){
+    found=true
+    let s=status(item.parts[part])
+    out+=`<div class="item"><b>${name}</b> <span class="${s.toLowerCase()}">${s}</span>
+    <button onclick="pick(${i},'${part}','${name}')">Check</button></div>`
+   }
+  })
+ })
+
+ if(!found && q){
+  out+=`<div class="box">No match
+  <button onclick="startAdd('${q}')">Add item</button></div>`
+ }
+
+ document.getElementById("results").innerHTML=out
+}
+
+let current=null
+function pick(i,p,n){
+ current={i,p,n}
+ document.getElementById("confirm").innerHTML=
+ `<div class="box"><b>${n}</b>
+ <button onclick="confirmPick()">Choose</button>
+ <button onclick="cancel()">Cancel</button></div>`
+}
+
+function confirmPick(){
+ db[current.i].parts[current.p].have++
+ save()
+ cancel()
+ search()
+}
+function cancel(){document.getElementById("confirm").innerHTML=""}
+
+function startAdd(q){
+ document.getElementById("add").innerHTML=
+ `<div class="box">
+ Name<input id="name" value="${q}">
+ Type<select id="type">
+  <option value="frame">Frame</option>
+  <option value="weapon">Weapon</option>
+ </select>
+ Setup<select id="setup">
+  <option value="frame">Frame default</option>
+  <option value="weapon">Weapon default</option>
+  <option value="custom">Custom</option>
+ </select>
+ <button onclick="continueAdd()">Next</button>
+ </div>`
+}
+
+let parts=[]
+
+function continueAdd(){
+ let setup=document.getElementById("setup").value
+ parts=[]
+
+ if(setup=="frame"){
+  parts=[
+   {name:"Blueprint",need:1,have:0,ducats:0},
+   {name:"Chassis",need:1,have:0,ducats:0},
+   {name:"Systems",need:1,have:0,ducats:0},
+   {name:"Neuroptics",need:1,have:0,ducats:0}
+  ]
+ }
+ else if(setup=="weapon"){
+  parts=[
+   {name:"Blueprint",need:1,have:0,ducats:0},
+   {name:"Barrel",need:1,have:0,ducats:0},
+   {name:"Receiver",need:1,have:0,ducats:0}
+  ]
+ }
+ else{
+  parts=[{name:"",need:1,have:0,ducats:0}]
+ }
+
+ renderParts()
+}
+
+function renderParts(){
+ let html=`<div class="box">`
+ parts.forEach((p,i)=>{
+  html+=`
+  <div>
+   Part<input value="${p.name}" onchange="parts[${i}].name=this.value">
+   Need<input type="number" value="${p.need}" onchange="parts[${i}].need=this.value">
+   Have<input type="number" value="${p.have}" onchange="parts[${i}].have=this.value">
+   Ducats<input type="number" value="${p.ducats}" onchange="parts[${i}].ducats=this.value">
+  </div>`
+ })
+ html+=`<button onclick="addRow()">Add part</button>
+ <button onclick="saveItem()">Save item</button></div>`
+
+ document.getElementById("add").innerHTML=html
+}
+
+function addRow(){
+ parts.push({name:"",need:1,have:0,ducats:0})
+ renderParts()
+}
+
+function saveItem(){
+ let name=document.getElementById("name").value
+ let item={name,parts:{}}
+
+ parts.forEach(p=>{
+  if(p.name){
+   item.parts[p.name]={need:+p.need||0,have:+p.have||0,ducats:+p.ducats||0}
+  }
+ })
+
+ db.push(item)
+ save()
+ alert("Saved")
+ document.getElementById("add").innerHTML=""
+ search()
+}
+</script>
+
+</body>
+</html>
